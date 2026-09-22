@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SpendWise · AI Finance Tracker for Students</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg-elevated: #161925;
+    --card: #1b1f2e;
+    --card-hover: #21263a;
+    --border: #2a2f42;
+    --text: #eef0f7;
+    --text-dim: #9aa1b8;
+    --text-faint: #666d87;
+    --primary: #6c5ce7;
+    --primary-hover: #7d70f0;
+    --primary-soft: rgba(108, 92, 231, 0.15);
+    --green: #2ecc9b;
+    --green-soft: rgba(46, 204, 155, 0.15);
+    --red: #ff6b6b;
+    --red-soft: rgba(255, 107, 107, 0.15);
+    --yellow: #ffb84d;
+    --yellow-soft: rgba(255, 184, 77, 0.15);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(circle at top left, #171b2b, var(--bg) 55%);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 26px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary), #a78bfa);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: var(--shadow);
+  }
+  .brand h1 { font-size: 20px; margin: 0; letter-spacing: -0.3px; }
+  .brand span { font-size: 12px; color: var(--text-dim); }
+
+  .backend-status {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); }
+  .dot.online { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .dot.offline { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+  /* ---------- Setup Banner ---------- */
+  .setup-banner {
+    background: linear-gradient(135deg, var(--primary-soft), rgba(167,139,250,0.08));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 24px;
+  }
+  .setup-banner h2 { margin: 0 0 4px; font-size: 17px; }
+  .setup-banner p { margin: 0 0 16px; color: var(--text-dim); font-size: 13px; }
+  .setup-fields { display: flex; gap: 12px; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; }
+  .field label { font-size: 12px; color: var(--text-dim); }
+
+  input, textarea, select {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 14px;
+    outline: none;
+    font-family: inherit;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+
+  button {
+    cursor: pointer;
+    font-family: inherit;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 16px;
+    transition: transform 0.08s ease, background 0.15s ease, opacity 0.15s ease;
+  }
+  button:active { transform: scale(0.97); }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-ghost { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--card-hover); }
+  .btn-danger { background: var(--red-soft); color: var(--red); border: 1px solid rgba(255,107,107,0.3); }
+  .btn-danger:hover { background: rgba(255,107,107,0.25); }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+
+  /* ---------- Summary Cards ---------- */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 780px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .kpi-card .label { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+  .kpi-card .value { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  .kpi-card .sub { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+  .value.positive { color: var(--green); }
+  .value.negative { color: var(--red); }
+
+  /* ---------- Action bar ---------- */
+  .action-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  /* ---------- Main grid ---------- */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 860px) { .main-grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .panel h3 { margin: 0 0 14px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+
+  .chart-wrap { position: relative; height: 260px; }
+  .empty-state { text-align: center; color: var(--text-faint); font-size: 13px; padding: 40px 10px; }
+
+  /* ---------- Transaction list ---------- */
+  .tx-list { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
+  .tx-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .tx-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .tx-emoji {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: var(--primary-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; flex-shrink: 0;
+  }
+  .tx-info { min-width: 0; }
+  .tx-note { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx-meta { font-size: 11px; color: var(--text-faint); }
+  .tx-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .tx-amount { font-weight: 700; font-size: 14px; }
+  .tx-flag {
+    font-size: 10px;
+    background: var(--yellow-soft);
+    color: var(--yellow);
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+  .icon-btn {
+    background: transparent;
+    color: var(--text-faint);
+    border: none;
+    font-size: 15px;
+    padding: 4px 6px;
+  }
+  .icon-btn:hover { color: var(--red); }
+
+  /* ---------- Anomaly panel ---------- */
+  .anomaly-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--yellow-soft);
+    color: var(--yellow);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .anomaly-item {
+    background: var(--bg-elevated);
+    border: 1px solid rgba(255,184,77,0.25);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .anomaly-item .tx-note { font-size: 13px; margin-bottom: 2px; }
+  .anomaly-item .reason { color: var(--text-dim); font-size: 12px; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(5,6,12,0.6);
+    backdrop-filter: blur(3px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card-hover);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow);
+  }
+  .modal h3 { margin-top: 0; }
+  .modal-fields { display: flex; flex-direction: column; gap: 12px; margin: 16px 0 20px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* ---------- AI Chat Drawer ---------- */
+  .chat-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), #a78bfa);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: var(--shadow);
+    border: none;
+    color: white;
+    z-index: 90;
+  }
+  .chat-drawer {
+    position: fixed;
+    bottom: 0; right: 0;
+    width: 380px;
+    max-width: 100vw;
+    height: 100vh;
+    background: var(--bg-elevated);
+    border-left: 1px solid var(--border);
+    box-shadow: -10px 0 30px rgba(0,0,0,0.4);
+    z-index: 95;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+  }
+  .chat-drawer.open { transform: translateX(0); }
+  .chat-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chat-header h3 { margin: 0; font-size: 15px; }
+  .chat-body { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .chat-msg { max-width: 88%; padding: 10px 13px; border-radius: 14px; font-size: 13px; line-height: 1.5; }
+  .chat-msg.bot { background: var(--card); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .chat-msg.user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .chat-msg.typing { color: var(--text-faint); font-style: italic; }
+  .chat-suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 18px 12px; }
+  .chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .chip:hover { background: var(--card-hover); color: var(--text); }
+  .chat-input-row {
+    display: flex;
+    gap: 8px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+  }
+  .chat-input-row input { flex: 1; }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  .hidden { display: none !important; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card-hover);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    box-shadow: var(--shadow);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">💸</div>
+      <div>
+        <h1>SpendWise</h1>
+        <span>AI-powered finance tracker for students</span>
+      </div>
+    </div>
+    <div class="backend-status" id="backendStatus">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Checking backend…</span>
+    </div>
+  </header>
+
+  <!-- Setup Banner -->
+  <div class="setup-banner" id="setupBanner">
+    <h2>👋 Let's set you up</h2>
+    <p>Tell SpendWise your monthly income and savings goal — you can change these anytime.</p>
+    <div class="setup-fields">
+      <div class="field">
+        <label>Monthly Income (₹)</label>
+        <input type="number" id="incomeInput" placeholder="e.g. 15000" min="0" />
+      </div>
+      <div class="field">
+        <label>Savings Goal (%)</label>
+        <input type="number" id="goalInput" placeholder="e.g. 20" min="0" max="100" />
+      </div>
+      <div class="field" style="flex: 0 0 auto; justify-content: flex-end; flex-direction: row; align-items: flex-end;">
+        <button class="btn-primary" id="saveSetupBtn">Save & Start</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-grid">
+    <div class="kpi-card">
+      <div class="label">Monthly Income</div>
+      <div class="value" id="kpiIncome">₹0</div>
+      <div class="sub" id="kpiIncomeSub">Set in setup</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Total Expenses</div>
+      <div class="value" id="kpiExpenses">₹0</div>
+      <div class="sub" id="kpiExpensesSub">0 transactions</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Remaining Balance</div>
+      <div class="value" id="kpiRemaining">₹0</div>
+      <div class="sub" id="kpiRemainingSub">&nbsp;</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Savings Rate</div>
+      <div class="value" id="kpiSavings">0%</div>
+      <div class="sub" id="kpiSavingsSub">Goal: —</div>
+    </div>
+  </div>
+
+  <!-- Action bar -->
+  <div class="action-bar">
+    <button class="btn-primary" id="addExpenseBtn">＋ Add Expense</button>
+    <button class="btn-ghost" id="loadDemoBtn">🎲 Load Demo Data</button>
+    <button class="btn-ghost" id="analyzeBtn">🔍 Run Anomaly Scan</button>
+    <button class="btn-danger" id="clearDataBtn">🗑 Clear Data</button>
+  </div>
+
+  <div class="main-grid">
+    <!-- Left column -->
+    <div style="display:flex; flex-direction:column; gap:20px;">
+      <div class="panel">
+        <h3>📊 Spending by Category</h3>
+        <div class="chart-wrap">
+          <canvas id="categoryChart"></canvas>
+          <div class="empty-state hidden" id="chartEmpty">No expenses yet — add one or load demo data.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>⚠️ ML Observations</h3>
+        <div id="anomalyContent">
+          <div class="empty-state">Run an anomaly scan to see flagged transactions here.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div class="panel">
+      <h3>🧾 Transactions</h3>
+      <div class="tx-list" id="txList">
+        <div class="empty-state">No transactions yet. Add your first expense!</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Add Expense Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Add Expense</h3>
+    <div class="modal-fields">
+      <div class="field">
+        <label>Amount (₹)</label>
+        <input type="number" id="modalAmount" placeholder="e.g. 250" min="0" step="0.01" />
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="modalCategory">
+          <option value="Food">🍔 Food</option>
+          <option value="Grocery">🛒 Grocery</option>
+          <option value="Transport">🚗 Transport</option>
+          <option value="Entertainment">🎬 Entertainment</option>
+          <option value="Shopping">🛍️ Shopping</option>
+          <option value="Rent">🏠 Rent</option>
+          <option value="Utilities">💡 Utilities</option>
+          <option value="Health">💊 Health</option>
+          <option value="Education">📚 Education</option>
+          <option value="Other">📦 Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Note</label>
+        <input type="text" id="modalNote" placeholder="e.g. Lunch with friends" />
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="modalDate" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="modalCancelBtn">Cancel</button>
+      <button class="btn-primary" id="modalSaveBtn">Add Expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI Chat -->
+<button class="chat-fab" id="chatFab">💬</button>
+<div class="chat-drawer" id="chatDrawer">
+  <div class="chat-header">
+    <h3>🤖 SpendWise Coach</h3>
+    <button class="icon-btn" id="chatCloseBtn" style="font-size:18px;">✕</button>
+  </div>
+  <div class="chat-body" id="chatBody">
+    <div class="chat-msg bot">Hi! I'm your SpendWise coach 👋 Ask me about your spending, saving tips, or budgeting strategies — I'll base my advice on your real numbers.</div>
+  </div>
+  <div class="chat-suggestions">
+    <div class="chip" data-q="Where am I spending the most?">Where am I spending the most?</div>
+    <div class="chip" data-q="How can I save more?">How can I save more?</div>
+    <div class="chip" data-q="Am I on track for my savings goal?">On track for my goal?</div>
+  </div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="Ask the coach…" />
+    <button class="btn-primary" id="chatSendBtn">Send</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  const API_BASE = "http://127.0.0.1:5000";
+
+  const CATEGORY_META = {
+    Food: { emoji: "🍔", color: "#ff6b6b" },
+    Grocery: { emoji: "🛒", color: "#2ecc9b" },
+    Transport: { emoji: "🚗", color: "#4d96ff" },
+    Entertainment: { emoji: "🎬", color: "#a78bfa" },
+    Shopping: { emoji: "🛍️", color: "#ffb84d" },
+    Rent: { emoji: "🏠", color: "#ff8fa3" },
+    Utilities: { emoji: "💡", color: "#f7d354" },
+    Health: { emoji: "💊", color: "#5ee7c1" },
+    Education: { emoji: "📚", color: "#7d70f0" },
+    Other: { emoji: "📦", color: "#9aa1b8" },
+  };
+
+  const STORAGE_KEYS = {
+    profile: "spendwise_profile",
+    transactions: "spendwise_transactions",
+  };
+
+  let state = {
+    profile: null, // { income, goalPct }
+    transactions: [], // { id, amount, category, note, date }
+    lastFlags: [], // ids flagged by last anomaly scan
+  };
+
+  let chart = null;
+
+  // ---------- Storage helpers ----------
+  function loadState() {
+    try {
+      const p = localStorage.getItem(STORAGE_KEYS.profile);
+      const t = localStorage.getItem(STORAGE_KEYS.transactions);
+      state.profile = p ? JSON.parse(p) : null;
+      state.transactions = t ? JSON.parse(t) : [];
+    } catch (e) {
+      console.error("Failed to load state", e);
+      state.profile = null;
+      state.transactions = [];
+    }
+  }
+
+  function saveProfile() {
+    localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(state.profile));
+  }
+
+  function saveTransactions() {
+    localStorage.setItem(STORAGE_KEYS.transactions, JSON.stringify(state.transactions));
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  // ---------- Toast ----------
+  let toastTimer = null;
+  function showToast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+  }
+
+  // ---------- Rendering ----------
+  function formatMoney(n) {
+    const num = Number(n) || 0;
+    return "₹" + num.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  }
+
+  function computeSummary() {
+    const income = state.profile ? Number(state.profile.income) || 0 : 0;
+    const goalPct = state.profile ? Number(state.profile.goalPct) || 0 : 0;
+    const totalExpenses = state.transactions.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const remaining = income - totalExpenses;
+    const savingsRate = income > 0 ? (remaining / income) * 100 : 0;
+
+    const byCategory = {};
+    state.transactions.forEach((t) => {
+      const c = t.category || "Other";
+      byCategory[c] = (byCategory[c] || 0) + Number(t.amount || 0);
+    });
+
+    return { income, goalPct, totalExpenses, remaining, savingsRate, byCategory };
+  }
+
+  function renderSetupBanner() {
+    const banner = document.getElementById("setupBanner");
+    if (state.profile) {
+      banner.classList.add("hidden");
+    } else {
+      banner.classList.remove("hidden");
+    }
+  }
+
+  function renderSummary() {
+    const s = computeSummary();
+
+    document.getElementById("kpiIncome").textContent = formatMoney(s.income);
+    document.getElementById("kpiIncomeSub").textContent = state.profile ? "Tap setup to edit" : "Not set yet";
+
+    document.getElementById("kpiExpenses").textContent = formatMoney(s.totalExpenses);
+    document.getElementById("kpiExpensesSub").textContent = `${state.transactions.length} transaction${state.transactions.length === 1 ? "" : "s"}`;
+
+    const remainingEl = document.getElementById("kpiRemaining");
+    remainingEl.textContent = formatMoney(s.remaining);
+    remainingEl.className = "value " + (s.remaining >= 0 ? "positive" : "negative");
+    document.getElementById("kpiRemainingSub").textContent = s.remaining >= 0 ? "Looking good" : "Over budget";
+
+    const savingsEl = document.getElementById("kpiSavings");
+    savingsEl.textContent = s.savingsRate.toFixed(1) + "%";
+    savingsEl.className = "value " + (s.savingsRate >= s.goalPct ? "positive" : "negative");
+    document.getElementById("kpiSavingsSub").textContent = state.profile ? `Goal: ${s.goalPct}%` : "Set a goal above";
+  }
+
+  function renderChart() {
+    const s = computeSummary();
+    const labels = Object.keys(s.byCategory);
+    const values = Object.values(s.byCategory);
+    const emptyEl = document.getElementById("chartEmpty");
+    const canvas = document.getElementById("categoryChart");
+
+    if (labels.length === 0) {
+      emptyEl.classList.remove("hidden");
+      canvas.classList.add("hidden");
+      if (chart) { chart.destroy(); chart = null; }
+      return;
+    }
+    emptyEl.classList.add("hidden");
+    canvas.classList.remove("hidden");
+
+    const colors = labels.map((l) => (CATEGORY_META[l] || CATEGORY_META.Other).color);
+
+    if (chart) {
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = values;
+      chart.data.datasets[0].backgroundColor = colors;
+      chart.update();
+    } else {
+      chart = new Chart(canvas.getContext("2d"), {
+        type: "doughnut",
+        data: {
+          labels,
+          datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { color: "#eef0f7", boxWidth: 12, padding: 14, font: { size: 11 } },
+            },
+          },
+        },
+      });
+    }
+  }
+
+  function renderTransactions() {
+    const listEl = document.getElementById("txList");
+    if (state.transactions.length === 0) {
+      listEl.innerHTML = '<div class="empty-state">No transactions yet. Add your first expense!</div>';
+      return;
+    }
+
+    const sorted = [...state.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    listEl.innerHTML = sorted
+      .map((t) => {
+        const meta = CATEGORY_META[t.category] || CATEGORY_META.Other;
+        const isFlagged = state.lastFlags.includes(t.id);
+        return `
+          <div class="tx-item" data-id="${t.id}">
+            <div class="tx-left">
+              <div class="tx-emoji">${meta.emoji}</div>
+              <div class="tx-info">
+                <div class="tx-note">${escapeHtml(t.note || t.category)}</div>
+                <div class="tx-meta">${t.category} · ${formatDate(t.date)}</div>
+              </div>
+            </div>
+            <div class="tx-right">
+              ${isFlagged ? '<span class="tx-flag">⚠ unusual</span>' : ""}
+              <div class="tx-amount">${formatMoney(t.amount)}</div>
+              <button class="icon-btn delete-btn" data-id="${t.id}" title="Delete">🗑</button>
+            </div>
+          </div>`;
+      })
+      .join("");
+
+    listEl.querySelectorAll(".delete-btn").forEach((btn) => {
+      btn.addEventListener("click", () => deleteTransaction(btn.dataset.id));
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  }
+
+  function renderAll() {
+    renderSetupBanner();
+    renderSummary();
+    renderChart();
+    renderTransactions();
+  }
+
+  // ---------- CRUD ----------
+  function addTransaction(tx) {
+    state.transactions.push({ id: uid(), ...tx });
+    saveTransactions();
+    renderAll();
+  }
+
+  function deleteTransaction(id) {
+    state.transactions = state.transactions.filter((t) => t.id !== id);
+    state.lastFlags = state.lastFlags.filter((f) => f !== id);
+    saveTransactions();
+    renderAll();
+    renderAnomalies();
+  }
+
+  function clearAllData() {
+    if (!confirm("This will erase all your SpendWise data on this device. Continue?")) return;
+    localStorage.removeItem(STORAGE_KEYS.profile);
+    localStorage.removeItem(STORAGE_KEYS.transactions);
+    state.profile = null;
+    state.transactions = [];
+    state.lastFlags = [];
+    renderAll();
+    document.getElementById("anomalyContent").innerHTML =
+      '<div class="empty-state">Run an anomaly scan to see flagged transactions here.</div>';
+    showToast("All data cleared");
+  }
+
+  function loadDemoData() {
+    const today = new Date();
+    const daysAgo = (n) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - n);
+      return d.toISOString().slice(0, 10);
+    };
+
+    const demo = [
+      { amount: 180, category: "Food", note: "Canteen lunch", date: daysAgo(1) },
+      { amount: 45, category: "Transport", note: "Bus pass top-up", date: daysAgo(2) },
+      { amount: 1200, category: "Grocery", note: "Weekly groceries", date: daysAgo(3) },
+      { amount: 350, category: "Entertainment", note: "Movie night", date: daysAgo(4) },
+      { amount: 2200, category: "Shopping", note: "New headphones", date: daysAgo(5) },
+      { amount: 210, category: "Food", note: "Dinner with roommates", date: daysAgo(6) },
+      { amount: 600, category: "Utilities", note: "Mobile recharge", date: daysAgo(7) },
+      { amount: 90, category: "Food", note: "Coffee run", date: daysAgo(8) },
+    ];
+
+    demo.forEach((tx) => state.transactions.push({ id: uid(), ...tx }));
+    saveTransactions();
+
+    if (!state.profile) {
+      state.profile = { income: 15000, goalPct: 20 };
+      saveProfile();
+    }
+
+    renderAll();
+    showToast("Demo data loaded 🎉");
+  }
+
+  // ---------- Backend health ----------
+  async function checkBackend() {
+    const dot = document.getElementById("statusDot");
+    const text = document.getElementById("statusText");
+    try {
+      const res = await fetch(`${API_BASE}/`, { method: "GET" });
+      if (res.ok) {
+        dot.className = "dot online";
+        text.textContent = "Backend online";
+        return true;
+      }
+      throw new Error("Bad response");
+    } catch (e) {
+      dot.className = "dot offline";
+      text.textContent = "Backend offline";
+      return false;
+    }
+  }
+
+  // ---------- Anomaly detection ----------
+  async function runAnomalyScan() {
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const contentEl = document.getElementById("anomalyContent");
+
+    if (state.transactions.length === 0) {
+      contentEl.innerHTML = '<div class="empty-state">Add some transactions first, then run a scan.</div>';
+      return;
+    }
+
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = "Scanning…";
+    contentEl.innerHTML = '<div class="empty-state">Analyzing your transactions…</div>';
+
+    try {
+      const res = await fetch(`${API_BASE}/api/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transactions: state.transactions }),
+      });
+
+      if (!res.ok) throw new Error("Request failed");
+      const data = await res.json();
+      const flagged = data.flagged || [];
+
+      state.lastFlags = flagged.map((f) => f.id).filter(Boolean);
+      renderAnomaliesFromData(flagged, data.method);
+      renderTransactions();
+    } catch (e) {
+      contentEl.innerHTML =
+        '<div class="empty-state">Couldn\'t reach the backend. Make sure the Flask server is running on http://127.0.0.1:5000.</div>';
+    } finally {
+      analyzeBtn.disabled = false;
+      analyzeBtn.textContent = "🔍 Run Anomaly Scan";
+    }
+  }
+
+  function renderAnomaliesFromData(flagged, method) {
+    const contentEl = document.getElementById("anomalyContent");
+    if (!flagged || flagged.length === 0) {
+      contentEl.innerHTML = '<div class="empty-state">✅ Nothing unusual — your spending looks consistent!</div>';
+      return;
+    }
+
+    const badge = `<div class="anomaly-badge">🧠 ML Observation${flagged.length > 1 ? "s" : ""} (${method || "model"})</div>`;
+    const items = flagged
+      .map((f) => {
+        const tx = state.transactions.find((t) => t.id === f.id);
+        const label = tx ? `${(CATEGORY_META[tx.category] || CATEGORY_META.Other).emoji} ${formatMoney(tx.amount)} — ${escapeHtml(tx.note || tx.category)}` : "Transaction";
+        return `
+          <div class="anomaly-item">
+            <div class="tx-note">${label}</div>
+            <div class="reason">${escapeHtml(f.reason || "This expense looks unusual compared to your other spending.")}</div>
+          </div>`;
+      })
+      .join("");
+
+    contentEl.innerHTML = badge + items;
+  }
+
+  function renderAnomalies() {
+    // Re-render based on current lastFlags after a deletion, without re-calling API
+    if (state.lastFlags.length === 0) return;
+    const contentEl = document.getElementById("anomalyContent");
+    const stillValid = state.lastFlags.filter((id) => state.transactions.some((t) => t.id === id));
+    state.lastFlags = stillValid;
+    if (stillValid.length === 0) {
+      contentEl.innerHTML = '<div class="empty-state">✅ Nothing unusual — your spending looks consistent!</div>';
+    }
+  }
+
+  // ---------- AI Chat ----------
+  function appendChatMessage(text, sender) {
+    const body = document.getElementById("chatBody");
+    const msg = document.createElement("div");
+    msg.className = `chat-msg ${sender}`;
+    msg.textContent = text;
+    body.appendChild(msg);
+    body.scrollTop = body.scrollHeight;
+    return msg;
+  }
+
+  async function sendChatMessage(question) {
+    if (!question || !question.trim()) return;
+    appendChatMessage(question, "user");
+
+    const typingEl = appendChatMessage("Thinking…", "bot");
+    typingEl.classList.add("typing");
+
+    const s = computeSummary();
+    const summaryPayload = {
+      income: s.income,
+      totalExpenses: s.totalExpenses,
+      remaining: s.remaining,
+      savingsRate: Number(s.savingsRate.toFixed(1)),
+      goalPct: s.goalPct,
+      byCategory: s.byCategory,
+      transactionCount: state.transactions.length,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, summary: summaryPayload }),
+      });
+
+      typingEl.remove();
+
+      if (!res.ok) throw new Error("Request failed");
+      const data = await res.json();
+      appendChatMessage(data.reply || "Sorry, I couldn't come up with a response.", "bot");
+    } catch (e) {
+      typingEl.remove();
+      appendChatMessage(
+        "I couldn't reach the backend. Make sure the Flask server is running on http://127.0.0.1:5000, then try again.",
+        "bot"
+      );
+    }
+  }
+
+  // ---------- Event wiring ----------
+  function wireEvents() {
+    document.getElementById("saveSetupBtn").addEventListener("click", () => {
+      const income = parseFloat(document.getElementById("incomeInput").value);
+      const goalPct = parseFloat(document.getElementById("goalInput").value);
+      if (isNaN(income) || income < 0) {
+        showToast("Please enter a valid income");
+        return;
+      }
+      state.profile = { income, goalPct: isNaN(goalPct) ? 20 : goalPct };
+      saveProfile();
+      renderAll();
+      showToast("Profile saved!");
+    });
+
+    document.getElementById("addExpenseBtn").addEventListener("click", openModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeModal);
+    document.getElementById("modalOverlay").addEventListener("click", (e) => {
+      if (e.target.id === "modalOverlay") closeModal();
+    });
+    document.getElementById("modalSaveBtn").addEventListener("click", () => {
+      const amount = parseFloat(document.getElementById("modalAmount").value);
+      const category = document.getElementById("modalCategory").value;
+      const note = document.getElementById("modalNote").value.trim();
+      const date = document.getElementById("modalDate").value || new Date().toISOString().slice(0, 10);
+
+      if (isNaN(amount) || amount <= 0) {
+        showToast("Enter a valid amount");
+        return;
+      }
+
+      addTransaction({ amount, category, note, date });
+      closeModal();
+      showToast("Expense added");
+    });
+
+    document.getElementById("loadDemoBtn").addEventListener("click", loadDemoData);
+    document.getElementById("clearDataBtn").addEventListener("click", clearAllData);
+    document.getElementById("analyzeBtn").addEventListener("click", runAnomalyScan);
+
+    document.getElementById("chatFab").addEventListener("click", () => {
+      document.getElementById("chatDrawer").classList.add("open");
+    });
+    document.getElementById("chatCloseBtn").addEventListener("click", () => {
+      document.getElementById("chatDrawer").classList.remove("open");
+    });
+    document.getElementById("chatSendBtn").addEventListener("click", () => {
+      const input = document.getElementById("chatInput");
+      const q = input.value;
+      input.value = "";
+      sendChatMessage(q);
+    });
+    document.getElementById("chatInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const input = e.target;
+        const q = input.value;
+        input.value = "";
+        sendChatMessage(q);
+      }
+    });
+    document.querySelectorAll(".chip").forEach((chip) => {
+      chip.addEventListener("click", () => sendChatMessage(chip.dataset.q));
+    });
+  }
+
+  function openModal() {
+    document.getElementById("modalAmount").value = "";
+    document.getElementById("modalNote").value = "";
+    document.getElementById("modalDate").value = new Date().toISOString().slice(0, 10);
+    document.getElementById("modalOverlay").classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("modalOverlay").classList.remove("open");
+  }
+
+  function prefillSetupInputs() {
+    if (state.profile) {
+      document.getElementById("incomeInput").value = state.profile.income;
+      document.getElementById("goalInput").value = state.profile.goalPct;
+    }
+  }
+
+  // ---------- Init ----------
+  function init() {
+    loadState();
+    wireEvents();
+    prefillSetupInputs();
+    renderAll();
+    checkBackend();
+    setInterval(checkBackend, 15000);
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>

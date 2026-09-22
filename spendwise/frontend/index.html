@@ -511,7 +511,8 @@
 
 <script>
 (function () {
-  const API_BASE = "http://127.0.0.1:5000";
+  // Replace this URL with your actual live Render Web Service URL
+  const API_BASE = "https://spendwise-nhc5.onrender.com";
 
   const CATEGORY_META = {
     Food: { emoji: "🍔", color: "#ff6b6b" },
@@ -834,7 +835,7 @@
       renderTransactions();
     } catch (e) {
       contentEl.innerHTML =
-        '<div class="empty-state">Couldn\'t reach the backend. Make sure the Flask server is running on http://127.0.0.1:5000.</div>';
+        `<div class="empty-state">Couldn't reach the backend at ${API_BASE}. Make sure the Flask server is running, then try again.</div>`;
     } finally {
       analyzeBtn.disabled = false;
       analyzeBtn.textContent = "🔍 Run Anomaly Scan";
@@ -865,7 +866,6 @@
   }
 
   function renderAnomalies() {
-    // Re-render based on current lastFlags after a deletion, without re-calling API
     if (state.lastFlags.length === 0) return;
     const contentEl = document.getElementById("anomalyContent");
     const stillValid = state.lastFlags.filter((id) => state.transactions.some((t) => t.id === id));
@@ -919,7 +919,7 @@
     } catch (e) {
       typingEl.remove();
       appendChatMessage(
-        "I couldn't reach the backend. Make sure the Flask server is running on http://127.0.0.1:5000, then try again.",
+        `I couldn't reach the backend at ${API_BASE}. Make sure the Flask server is running, then try again.`,
         "bot"
       );
     }

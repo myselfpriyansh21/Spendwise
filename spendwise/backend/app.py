@@ -4,12 +4,11 @@ SpendWise Backend
 Stateless Flask API providing:
   1. POST /api/analyze  -> ML-based (or heuristic) anomaly detection on transactions
   2. POST /api/chat     -> AI budgeting coach proxy via OpenRouter
-  3. GET  /             -> health check njj
+  3. GET  /             -> health check
 
 No database. All persistent state lives in the browser via localStorage.
 The frontend is expected to run separately (e.g. opened directly in a browser
-or served by any static file server) and talk to this API on
-http://127.0.0.1:5000.
+or served by any static file server) and talk to this API.
 """
 
 import os
@@ -236,4 +235,5 @@ def chat_with_coach():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
